@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://soutorium304-commits.github.io/prototype-dh-essai/sitemap.xml
