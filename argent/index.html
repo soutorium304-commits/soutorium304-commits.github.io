@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mon Vrai Argent</title>
+<meta name="description" content="Calendrier & Budget + L'Établi : suivre son vrai argent, ses dépenses fixes et variables, ses achats prévus. Données dans TON navigateur et TON Google Drive.">
+<meta name="theme-color" content="#1b1d22">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="argent.css">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js" defer></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+<header class="ar-haut">
+  <div class="ar-marque">
+    <span class="ar-logo" aria-hidden="true">💠</span>
+    <div><small>Système central</small><b>Mon Vrai Argent</b></div>
+  </div>
+  <nav class="ar-bascule" role="tablist" aria-label="Pages">
+    <button type="button" role="tab" id="tab-calendrier" data-vue="calendrier" aria-selected="true" aria-controls="vue-calendrier">
+      <span class="ar-ico">📅</span><span>Calendrier &amp; Budget</span></button>
+    <button type="button" role="tab" id="tab-etabli" data-vue="etabli" aria-selected="false" aria-controls="vue-etabli">
+      <span class="ar-ico">📝</span><span>L'Établi</span></button>
+  </nav>
+  <div class="ar-compte">
+    <span id="ar-etat-jarvis" class="ar-pastille ar-ok" hidden title="Relié à Jarvis : ce que tu dis dans le chat et les paiements du téléphone arrivent ici">🧠 Jarvis</span>
+    <span id="ar-etat-drive" class="ar-pastille" title="Sauvegarde Google Drive">☁️ Local</span>
+    <button type="button" id="ar-google" class="ar-btn ar-btn-google">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      <span>Connexion Google</span></button>
+    <div id="ar-moi" class="ar-moi" hidden>
+      <span id="ar-moi-nom"></span>
+      <button type="button" id="ar-deco" class="ar-lien">Se déconnecter</button>
+    </div>
+  </div>
+</header>
+
+<div id="ar-bandeau" class="ar-bandeau" hidden></div>
+
+<!-- Session 9 : l'assistant (les 2 pages). PC de Yanis allumé → Jarvis comprend la phrase ; éteint → saisie à la main. -->
+<section id="ar-assistant" class="ar-assistant" aria-label="Demander à Jarvis">
+  <form id="form-assistant" autocomplete="off">
+    <span id="as-etat" class="ar-pastille">⏳ Je cherche Jarvis…</span>
+    <input id="as-texte" type="text" maxlength="300" disabled
+           placeholder="🧠 Demander à Jarvis… « J'ai payé 24 € de courses en CB », « Range une lampe à 30 € dans mon Établi »">
+    <button class="ar-btn ar-btn-or" type="submit" disabled>Envoyer</button>
+  </form>
+  <p id="as-retour" class="ar-petit" aria-live="polite"></p>
+  <p class="ar-petit ar-as-note">PC de Yanis allumé : le cerveau de Jarvis comprend tout (ajouter, déplacer, supprimer, questions). Pour comprendre, il lit ton budget le temps de répondre : rien n'est gardé sur le PC. Une suppression de plusieurs éléments demande toujours ta confirmation.</p>
+</section>
+
+<main>
+  <!-- ============================== PAGE 1 : CALENDRIER & BUDGET ============================== -->
+  <section id="vue-calendrier" class="ar-vue" role="tabpanel" aria-labelledby="tab-calendrier">
+    <div class="ar-compteurs">
+      <div class="ar-w ar-w-in"><small id="w-in-titre">Entrées du mois</small><b id="w-in">+ 0 €</b><span id="w-in-det"></span></div>
+      <div class="ar-w ar-w-out"><small id="w-out-titre">Sorties du mois</small><b id="w-out">− 0 €</b><span id="w-out-det"></span></div>
+      <div class="ar-w ar-w-mois"><small id="w-mois-titre">Résultat du mois</small><b id="w-mois">0 €</b><span id="w-mois-det"></span></div>
+      <div class="ar-w ar-w-rav" title="Seulement les opérations dont la date est arrivée : une dépense datée dans le futur ne compte qu'à son jour.">
+        <small>Solde réel aujourd'hui (compte)</small><b id="w-rav">0 €</b><span id="w-rav-det">Prévisionnel fin de mois : —</span></div>
+    </div>
+
+    <!-- module 1/7 : comptes À PART du solde réel -->
+    <div class="ar-comptes">
+      <article class="ar-compte-carte ar-livret" id="carte-livret" aria-label="Livret A">
+        <div class="ar-compte-tete"><span class="ar-ico" aria-hidden="true">🏦</span><div><small>Livret A</small><em>épargne à part — pas dans ton solde réel</em></div></div>
+        <b id="livret-solde">— €</b>
+        <span id="livret-det" class="ar-petit"></span>
+        <div class="ar-compte-gestes">
+          <button type="button" class="ar-btn" data-compte="livret_a" data-geste="vers" title="Du compte courant vers le Livret A">＋ Verser</button>
+          <button type="button" class="ar-btn" data-compte="livret_a" data-geste="depuis" title="Du Livret A vers le compte courant">− Retirer</button>
+          <button type="button" class="ar-btn" data-compte="livret_a" data-geste="definir" title="Corriger le solde exact">✏️ Solde</button>
+        </div>
+      </article>
+      <article class="ar-compte-carte ar-liquide" id="carte-liquide" aria-label="Argent liquide">
+        <div class="ar-compte-tete"><span class="ar-ico" aria-hidden="true">💵</span><div><small>Argent liquide</small><em>billets et pièces — à part du compte bancaire</em></div></div>
+        <b id="liquide-solde">— €</b>
+        <span id="liquide-det" class="ar-petit"></span>
+        <div class="ar-compte-gestes">
+          <button type="button" class="ar-btn" data-compte="liquide" data-geste="vers" title="Retrait au distributeur : sort du compte, entre dans le liquide">＋ Retrait DAB</button>
+          <button type="button" class="ar-btn" data-compte="liquide" data-geste="depuis" title="Espèces déposées à la banque">− Dépôt banque</button>
+          <button type="button" class="ar-btn" data-compte="liquide" data-geste="definir" title="Compter ce que tu as vraiment sur toi">✏️ Solde</button>
+        </div>
+      </article>
+      <article class="ar-compte-carte ar-jarvis" id="carte-jarvis" aria-label="Argent de Jarvis" hidden>
+        <div class="ar-compte-tete"><span class="ar-ico" aria-hidden="true">🤖</span><div><small>Argent de Jarvis</small><em>son porte-monnaie — OMNIS · Revolut bientôt</em></div></div>
+        <b id="jarvis-solde">0,00 €</b>
+        <span id="jarvis-det" class="ar-petit"></span>
+        <div class="ar-compte-gestes">
+          <button type="button" class="ar-btn" data-compte="jarvis" data-geste="vers" title="Du compte courant vers le porte-monnaie de Jarvis">＋ Envoyer</button>
+          <button type="button" class="ar-btn" data-compte="jarvis" data-geste="ajuster" title="Gain ou perte réalisé par Jarvis">± Gain / perte</button>
+          <button type="button" class="ar-btn" data-compte="jarvis" data-geste="definir" title="Corriger le solde exact">✏️ Solde</button>
+        </div>
+      </article>
+    </div>
+
+    <div class="ar-flux">
+      <article class="ar-carte ar-fixes">
+        <header><h2>🔁 Fixes <em>— chaque mois, à date fixe</em></h2><span id="fixes-net" class="ar-net"></span></header>
+        <ul id="fixes-liste" class="ar-fixes-liste"></ul>
+        <details class="ar-ajout">
+          <summary>+ Ajouter un revenu ou une charge fixe</summary>
+          <form id="form-fixe" class="ar-form" autocomplete="off">
+            <div class="ar-ligne">
+              <select id="fix-type" aria-label="Type"><option value="depense">🔴 Charge fixe</option><option value="revenu">🟢 Revenu fixe</option></select>
+              <input id="fix-jour" type="number" min="1" max="31" placeholder="Jour (1-31)" aria-label="Jour du mois" required>
+            </div>
+            <input id="fix-desc" type="text" placeholder="Ex. Assurance moto, Alternance…" required>
+            <input id="fix-montant" type="text" inputmode="decimal" placeholder="Montant (€)" required>
+            <button class="ar-btn ar-btn-or" type="submit">Ajouter le fixe</button>
+          </form>
+        </details>
+      </article>
+
+      <article class="ar-carte ar-variables">
+        <header><h2>🛒 Variables <em>— dépenses &amp; entrées du quotidien</em></h2><span id="var-net" class="ar-net"></span></header>
+        <form id="form-op" class="ar-form" autocomplete="off">
+          <div class="ar-ligne">
+            <input id="op-date" type="date" aria-label="Date" required>
+            <select id="op-type" aria-label="Type"><option value="depense">🔴 Dépense</option><option value="revenu">🟢 Entrée</option></select>
+            <select id="op-methode" aria-label="Moyen de paiement"><option value="CB">💳 CB</option><option value="Espèces">💵 Espèces</option><option value="Virement">🏦 Virement</option><option value="Chèque">🧾 Chèque</option></select>
+          </div>
+          <div class="ar-ligne">
+            <input id="op-desc" type="text" placeholder="Ex. Courses, Vinted, Essence…" required>
+            <input id="op-montant" type="text" inputmode="decimal" placeholder="Montant (€)" required>
+          </div>
+          <button class="ar-btn ar-btn-or" type="submit">Ajouter l'opération</button>
+        </form>
+      </article>
+    </div>
+
+    <div class="ar-grille">
+      <div class="ar-carte ar-cal"><div id="calendrier"></div><p id="cal-repli" class="ar-petit" hidden>Le calendrier n'a pas pu se charger (hors ligne ?) : l'historique ci-dessous reste complet.</p></div>
+      <aside class="ar-carte ar-histo">
+        <header class="ar-plie" id="histo-entete" role="button" tabindex="0" aria-expanded="true">
+          <h2>📜 Historique</h2><span id="histo-fleche">▼ Cacher</span>
+        </header>
+        <div id="histo-corps">
+          <div class="ar-ligne">
+            <input id="histo-mot" type="search" placeholder="Rechercher (mot, prix, moyen)…">
+            <input id="histo-mois" type="month" aria-label="Mois">
+          </div>
+          <p id="histo-total" class="ar-petit"></p>
+          <div class="ar-table"><table><thead><tr><th>Date</th><th>Description</th><th>Moyen</th><th>Montant</th><th></th></tr></thead>
+            <tbody id="histo-lignes"></tbody></table></div>
+        </div>
+      </aside>
+    </div>
+
+    <section id="ar-bilan" class="ar-carte ar-bilan" hidden>
+      <header><h2>📊 Bilan du mois &amp; que faire de mon argent</h2>
+        <div class="ar-ligne"><input id="bilan-mois" type="month" aria-label="Mois du bilan"><button id="bilan-faire" class="ar-btn ar-btn-or" type="button">Faire le bilan</button></div></header>
+      <div id="bilan-corps" class="ar-md"><p class="ar-petit">Jarvis analyse tes fixes, tes variables et L'Établi, puis te propose un plan : coussin de sécurité (Livret A), achats prévus, et seulement ensuite l'investissement. Il le fait aussi tout seul à chaque fin de mois.</p></div>
+    </section>
+
+    <section id="ar-tel" class="ar-carte ar-tel" hidden>
+      <details>
+        <summary><h2>📱 Paiements Samsung Pay notés tout seuls</h2><span id="tel-etat" class="ar-petit"></span></summary>
+        <div class="ar-tel-corps">
+          <p>Quand tu paies avec ton téléphone, la notification (Samsung Wallet ou ta banque) est envoyée à Jarvis qui l'inscrit au bon jour. Tu n'as plus à dire que tes paiements <b>en espèces</b>.</p>
+          <ol>
+            <li>Installe <b>Automate</b> (LlamaLab, gratuit) sur ton S23+ depuis le Play Store.</li>
+            <li>Crée un flux : <b>Flow beginning</b> → <b>Notification posted?</b> (Package : <code>com.samsung.android.spay</code> — et/ou l'appli de ta banque ; « Proceed : when changed » ; sorties <i>Title</i> → <code>titre</code>, <i>Message</i> → <code>texte</code>, <i>Package</i> → <code>appli</code>).</li>
+            <li>Ajoute <b>HTTP request</b> : Méthode <code>POST</code>, adresse ci-dessous, Content type <code>application/json</code>, corps :<br><code>{"titre":titre,"texte":texte,"appli":appli}</code> (bouton « fx » pour écrire une expression), en-tête <code>X-Jarvis-Cle</code> = la clé.</li>
+            <li>Relie la sortie de <b>HTTP request</b> au bloc <b>Notification posted?</b> (boucle), puis <b>Start</b>. Autorise l'accès aux notifications quand Android le demande.</li>
+            <li>Paie un petit montant : il apparaît ici en quelques secondes (📱 dans l'historique).</li>
+          </ol>
+          <div class="ar-cles">
+            <label>Adresse <input id="tel-url" type="text" readonly></label><button class="ar-btn" type="button" data-copier="tel-url">Copier</button>
+            <label>Clé secrète <input id="tel-cle" type="password" readonly></label><button class="ar-btn" type="button" id="tel-voir">Afficher</button><button class="ar-btn" type="button" data-copier="tel-cle">Copier</button>
+          </div>
+          <p class="ar-petit">La clé ne sert qu'à ça : sans elle, personne ne peut écrire dans ton budget. Guide complet : <code>C:\Jarvis\docs\GUIDE-SAMSUNG-PAY-AUTOMATE.md</code>.</p>
+        </div>
+      </details>
+    </section>
+  </section>
+
+  <!-- ============================== PAGE 2 : L'ÉTABLI ============================== -->
+  <section id="vue-etabli" class="ar-vue" role="tabpanel" aria-labelledby="tab-etabli" hidden>
+    <div class="ar-etabli-tete">
+      <div><h1>L'Établi <small>Notes &amp; achats prévus</small></h1>
+        <p class="ar-petit">Une date prévue → la carte apparaît dans le calendrier. <b>✅ Acheté</b> = archivée dans tes achats réalisés. <b>🗑️</b> = seulement si tu ne l'achèteras jamais.</p></div>
+      <div class="ar-totaux">
+        <div><small>Estimé restant</small><b id="eta-restant">0 €</b></div>
+        <div><small>Déjà acheté</small><b id="eta-achete">0 €</b></div>
+      </div>
+    </div>
+    <div id="eta-tableau" class="ar-tableau"></div>
+    <button type="button" id="eta-dossier" class="ar-btn ar-btn-large">+ Créer un nouveau dossier</button>
+    <details id="eta-archives" class="ar-carte ar-archives">
+      <summary><h2>🧾 Achats réalisés</h2><span id="eta-archives-resume" class="ar-petit"></span></summary>
+      <div id="eta-archives-liste"></div>
+    </details>
+  </section>
+</main>
+
+<dialog id="ar-dialogue" class="ar-dialogue">
+  <form method="dialog" id="dlg-form">
+    <h2 id="dlg-titre">🎉 Acheté !</h2>
+    <p id="dlg-texte" class="ar-petit"></p>
+    <div id="dlg-champs"></div>
+    <div class="ar-ligne ar-fin">
+      <button value="non" class="ar-btn" type="submit">Annuler</button>
+      <button value="oui" class="ar-btn ar-btn-or" type="submit" id="dlg-ok">Confirmer</button>
+    </div>
+  </form>
+</dialog>
+<div id="ar-toast" class="ar-toast" role="status" aria-live="polite" hidden></div>
+<div id="ar-menu" class="ar-menu" hidden></div>
+<script src="argent.js"></script>
+</body>
+</html>

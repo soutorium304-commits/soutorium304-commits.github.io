@@ -1,0 +1,12 @@
+{
+  "name": "Mon Vrai Argent",
+  "short_name": "Mon Argent",
+  "description": "Calendrier & Budget + L'Établi : ton vrai argent, tes fixes, tes dépenses, tes achats prévus.",
+  "start_url": "./?vue=calendrier",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1b1d22",
+  "theme_color": "#1b1d22",
+  "lang": "fr",
+  "icons": [{ "src": "icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

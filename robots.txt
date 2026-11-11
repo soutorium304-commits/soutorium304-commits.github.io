@@ -1,0 +1,4 @@
+# Jarvis
+User-agent: *
+Allow: /
+Sitemap: https://soutorium304-commits.github.io/sitemap.xml
